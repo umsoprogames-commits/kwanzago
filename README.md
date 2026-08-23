@@ -24,10 +24,10 @@ npm run specs:validate
 
 ## Estado actual
 
-O KG-001 estabelece a fundação do backend em `apps/api`: NestJS, PostgreSQL,
-Prisma, configuração segura, identidade/perfis, autorização por papel e âmbito
-do proprietário, correlação e redacção de logs. Nenhum endpoint funcional é
-criado nesta fatia.
+O backend em `apps/api` é uma demo NestJS/PostgreSQL/Prisma funcional: QR
+estático, intenção de cobrança, confirmação com PIN por risco, ledger de dupla
+entrada, receita pendente, fecho e reserva operacional. Os dados e tokens são
+exclusivamente sintéticos.
 
 O cliente Dart em `packages/api_client` é gerado exclusivamente de
 `contracts/openapi.yaml`; não devem ser criados modelos manuais concorrentes.
@@ -50,6 +50,22 @@ Todos os dados e segredos de exemplo são sintéticos. Esta demo não processa
 fundos reais nem representa integração com EMIS, banco, PSP ou Estado.
 
 Consulte `apps/api/README.md` para operação e rollback do banco local.
+
+## Demo web v0.7
+
+`apps/web` é o protótipo visual Vinext/React para a apresentação. Mantém os
+fluxos interactivos mockados de passageiro, cobrador e proprietário e a sua
+associação ao GPT Sites em `apps/web/.openai/hosting.json`. Não substitui o
+backend financeiro nem processa fundos reais.
+
+```bash
+cd apps/web
+npm run install:ci
+npm test
+npm run start
+```
+
+As rotas demonstráveis são `/` e `/owner`.
 
 ## Contrato e cliente Dart
 

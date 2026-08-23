@@ -19,6 +19,7 @@ prototype/gpt-sites/.wrangler/
 prototype/gpt-sites/.sites-runtime/
 prototype/gpt-sites/outputs/
 prototype/gpt-sites/work/
+**/.sites-runtime/
 
 # Flutter and Dart
 .tooling/
@@ -53,3 +54,6 @@ yarn-error.log*
 
 # Material histórico local; a proveniência revista vive em sources/.
 evidence/source-materials/
+
+# Pacote de importação local já integrado em apps/web.
+kwanzago-project-v0.7-source/
