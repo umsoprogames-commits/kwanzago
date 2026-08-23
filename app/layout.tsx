@@ -22,5 +22,17 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="pt-AO"><body>{children}</body></html>;
+  return (
+    <html lang="pt-PT" className="scroll-smooth">
+      <head>
+        <meta name="codex-preview" content="development" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+      </head>
+      <body className="antialiased overflow-x-hidden text-body-lg font-sans relative bg-surface-bright">
+        {children}
+      </body>
+    </html>
+  );
 }

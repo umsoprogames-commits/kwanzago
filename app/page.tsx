@@ -196,16 +196,76 @@ function CollectorDemo({ quantity, setQuantity, onScan, scanState }: { quantity:
 function OwnerPreview() {
   const topVehicles = initialVehicles.slice(0, 3);
   const maxRevenue = Math.max(...revenueDays.map(d => d.value));
-  return <div className="owner-preview">
-    <div className="owner-preview-kpis">
-      <article className="owner-kpi highlight"><span>Receita verificada hoje</span><strong>128.400 Kz</strong><small><b>+12,8%</b> vs. ontem</small></article>
-      <article className="owner-kpi"><span>Pendente de fecho</span><strong>96.700 Kz</strong><small>Disponível amanhã às 08:00</small></article>
-      <article className="owner-kpi reserve"><span>Reserva operacional</span><strong>12.500 Kz</strong><small>Para custos autorizados</small></article>
+  return (
+    <div className="max-w-5xl mx-auto glass-card rounded-3xl shadow-2xl p-6 lg:p-10 border border-white/60 text-left">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-950 rounded-2xl p-6 text-white shadow-lg flex flex-col justify-between min-h-[140px] transform hover:-translate-y-1 transition-transform">
+          <p className="text-sm font-medium text-blue-100 opacity-90">Receita verificada hoje</p>
+          <div>
+            <h4 className="text-3xl font-extrabold mb-1">128.400 Kz</h4>
+            <p className="text-xs text-blue-200 font-medium">+12,8% vs. ontem</p>
+          </div>
+        </div>
+        <div className="bg-white/80 backdrop-blur-sm border border-white rounded-2xl p-6 shadow-md flex flex-col justify-between min-h-[140px] transform hover:-translate-y-1 transition-transform">
+          <p className="text-sm font-semibold text-gray-500">Pendente de fecho</p>
+          <div>
+            <h4 className="text-3xl font-extrabold text-slate-900 mb-1">96.700 Kz</h4>
+            <p className="text-xs text-gray-400 font-medium">Disponível amanhã às 08:00</p>
+          </div>
+        </div>
+        <div className="bg-amber-50/80 backdrop-blur-sm border border-amber-100/50 rounded-2xl p-6 shadow-md flex flex-col justify-between min-h-[140px] transform hover:-translate-y-1 transition-transform">
+          <p className="text-sm font-semibold text-amber-700/80">Reserva operacional</p>
+          <div>
+            <h4 className="text-3xl font-extrabold text-slate-900 mb-1">12.500 Kz</h4>
+            <p className="text-xs text-amber-600/80 font-medium">Para custos autorizados</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white/80 backdrop-blur-sm border border-white rounded-2xl p-6 mb-8 shadow-md">
+        <div className="owner-preview-chart border-0 p-0 h-auto">
+          <div className="chart-bars h-44">
+            {revenueDays.map((d, index) => (
+              <div className="chart-bar-wrap" key={index}>
+                <span className="bar-tooltip">{money(d.value)}</span>
+                <div
+                  className="chart-bar"
+                  style={{ height: `${(d.value / maxRevenue) * 100}%` }}
+                />
+                <small>{d.day}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="vehicle-table mb-6">
+        <div className="vehicle-row vehicle-header">
+          <span>Viatura</span>
+          <span>Cobrador</span>
+          <span>Receita hoje</span>
+          <span>Estado</span>
+        </div>
+        {topVehicles.map(vehicle => (
+          <div className="vehicle-row" key={vehicle.plate}>
+            <span className="vehicle-name">
+              <i><Icon name="car" size={15}/></i>
+              <strong>{vehicle.plate}</strong>
+            </span>
+            <span>{vehicle.collector}</span>
+            <strong>{money(vehicle.revenue)}</strong>
+            <span className={`vehicle-status ${vehicle.status === "Atenção" ? "attention" : ""}`}>
+              <i/>{vehicle.status}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <a className="cta-button w-full py-4 px-6 rounded-full text-white font-semibold flex items-center justify-center gap-2 shadow-lg" href="/owner">
+        Abrir dashboard completo do proprietário <Icon name="arrow" size={16}/>
+      </a>
     </div>
-    <div className="owner-preview-chart"><div className="chart-bars">{revenueDays.map((d, index) => <div className="chart-bar-wrap" key={index}><span className="bar-tooltip">{money(d.value)}</span><div className="chart-bar" style={{ height: `${(d.value / maxRevenue) * 100}%` }}/><small>{d.day}</small></div>)}</div></div>
-    <div className="vehicle-table"><div className="vehicle-row vehicle-header"><span>Viatura</span><span>Cobrador</span><span>Receita hoje</span><span>Estado</span></div>{topVehicles.map(vehicle => <div className="vehicle-row" key={vehicle.plate}><span className="vehicle-name"><i><Icon name="car" size={15}/></i><strong>{vehicle.plate}</strong></span><span>{vehicle.collector}</span><strong>{money(vehicle.revenue)}</strong><span className={`vehicle-status ${vehicle.status === "Atenção" ? "attention" : ""}`}><i/>{vehicle.status}</span></div>)}</div>
-    <a className="blue-button full-width" href="/owner">Abrir dashboard completo <Icon name="arrow" size={16}/></a>
-  </div>;
+  );
 }
 
 export default function Home() {
