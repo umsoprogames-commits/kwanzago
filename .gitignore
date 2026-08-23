@@ -1,0 +1,55 @@
+# System and editor files
+.DS_Store
+*.swp
+*.swo
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+
+# Node and GPT Sites
+**/node_modules/
+prototype/gpt-sites/.next/
+prototype/gpt-sites/dist/
+prototype/gpt-sites/out/
+prototype/gpt-sites/coverage/
+prototype/gpt-sites/.wrangler/
+prototype/gpt-sites/.sites-runtime/
+prototype/gpt-sites/outputs/
+prototype/gpt-sites/work/
+
+# Flutter and Dart
+.tooling/
+.pub-cache/
+**/.idea/
+**/*.iml
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+apps/**/build/
+packages/**/build/
+**/.gradle/
+
+# NestJS and test output
+apps/api/dist/
+apps/api/coverage/
+apps/api/src/generated/prisma/
+
+# ESP-IDF
+firmware/**/build/
+firmware/**/sdkconfig.old
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Material histórico local; a proveniência revista vive em sources/.
+evidence/source-materials/

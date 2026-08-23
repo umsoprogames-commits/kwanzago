@@ -1,0 +1,252 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserState {
+  ACTIVE
+  BLOCKED
+
+  @@map("user_state")
+}
+
+enum ProfileType {
+  PASSENGER
+  COLLECTOR
+  OWNER
+  ADMIN
+
+  @@map("profile_type")
+}
+
+enum PaymentAliasState {
+  ACTIVE
+  BLOCKED
+  REPLACED
+
+  @@map("payment_alias_state")
+}
+
+enum PaymentIntentState {
+  PENDING_CONFIRMATION
+  APPROVED
+  DECLINED
+  EXPIRED
+  CANCELLED
+  UNKNOWN
+
+  @@map("payment_intent_state")
+}
+
+enum PaymentState {
+  POSTED
+  DECLINED
+  REVERSED
+
+  @@map("payment_state")
+}
+
+enum LedgerAccountType {
+  SYSTEM_CLEARING
+  PASSENGER_AVAILABLE
+  OWNER_PENDING
+  OWNER_AVAILABLE
+  OPERATING_RESERVED
+
+  @@map("ledger_account_type")
+}
+
+enum LedgerEntryKind {
+  DEMO_LOAD
+  PAYMENT
+  SETTLEMENT
+  OPERATING_ALLOWANCE
+
+  @@map("ledger_entry_kind")
+}
+
+enum LedgerSide {
+  DEBIT
+  CREDIT
+
+  @@map("ledger_side")
+}
+
+enum SettlementState {
+  OPEN
+  CLOSED
+  AVAILABLE
+  FAILED
+
+  @@map("settlement_state")
+}
+
+model User {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalSubject String    @unique @map("external_subject") @db.VarChar(128)
+  state           UserState @default(ACTIVE)
+  profiles        Profile[]
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("users")
+}
+
+model Profile {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String      @map("user_id") @db.Uuid
+  type         ProfileType
+  ownerScopeId String?     @map("owner_scope_id") @db.Uuid
+  active       Boolean     @default(true)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, type])
+  @@index([ownerScopeId, type])
+  @@map("profiles")
+}
+
+model Wallet {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  passengerProfileId String         @unique @map("passenger_profile_id") @db.Uuid
+  currency           String         @default("AOA") @db.VarChar(3)
+  aliases            PaymentAlias[]
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("wallets")
+}
+
+model PaymentAlias {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  walletId  String            @map("wallet_id") @db.Uuid
+  qrPayload String            @unique @map("qr_payload") @db.VarChar(128)
+  state     PaymentAliasState @default(ACTIVE)
+  wallet    Wallet            @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([walletId, state])
+  @@map("payment_aliases")
+}
+
+model FareRule {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerScopeId String   @map("owner_scope_id") @db.Uuid
+  amountMinor  Int      @map("amount_minor")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([ownerScopeId, active])
+  @@map("fare_rules")
+}
+
+model PaymentIntent {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  walletId              String             @map("wallet_id") @db.Uuid
+  aliasId               String             @map("alias_id") @db.Uuid
+  collectorProfileId    String             @map("collector_profile_id") @db.Uuid
+  ownerScopeId          String             @map("owner_scope_id") @db.Uuid
+  fareRuleId            String             @map("fare_rule_id") @db.Uuid
+  quantity              Int
+  unitAmountMinor       Int                @map("unit_amount_minor")
+  totalAmountMinor      Int                @map("total_amount_minor")
+  state                 PaymentIntentState @default(PENDING_CONFIRMATION)
+  stepUpRequired        Boolean            @default(false) @map("step_up_required")
+  expiresAt             DateTime           @map("expires_at") @db.Timestamptz(6)
+  createIdempotencyKey  String             @map("create_idempotency_key") @db.Uuid
+  createPayloadHash     String             @map("create_payload_hash") @db.Char(64)
+  approveIdempotencyKey String?            @map("approve_idempotency_key") @db.Uuid
+  approvePayloadHash    String?            @map("approve_payload_hash") @db.Char(64)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([collectorProfileId, createIdempotencyKey])
+  @@index([walletId, state])
+  @@index([ownerScopeId, state])
+  @@map("payment_intents")
+}
+
+model Payment {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  intentId         String       @unique @map("intent_id") @db.Uuid
+  ledgerEntryId    String       @unique @map("ledger_entry_id") @db.Uuid
+  totalAmountMinor Int          @map("total_amount_minor")
+  receiptCode      String       @unique @map("receipt_code") @db.VarChar(32)
+  state            PaymentState @default(POSTED)
+  postedAt         DateTime     @default(now()) @map("posted_at") @db.Timestamptz(6)
+
+  @@map("payments")
+}
+
+model LedgerAccount {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type         LedgerAccountType
+  walletId     String?           @map("wallet_id") @db.Uuid
+  ownerScopeId String?           @map("owner_scope_id") @db.Uuid
+  currency     String            @default("AOA") @db.VarChar(3)
+  lines        LedgerLine[]
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([walletId, type])
+  @@index([ownerScopeId, type])
+  @@map("ledger_accounts")
+}
+
+model LedgerEntry {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind      LedgerEntryKind
+  reference String          @unique @db.VarChar(128)
+  postedAt  DateTime        @default(now()) @map("posted_at") @db.Timestamptz(6)
+  lines     LedgerLine[]
+
+  @@map("ledger_entries")
+}
+
+model LedgerLine {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entryId     String        @map("entry_id") @db.Uuid
+  accountId   String        @map("account_id") @db.Uuid
+  side        LedgerSide
+  amountMinor Int           @map("amount_minor")
+  entry       LedgerEntry   @relation(fields: [entryId], references: [id], onDelete: Restrict)
+  account     LedgerAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([accountId, side])
+  @@index([entryId])
+  @@map("ledger_lines")
+}
+
+model SettlementBatch {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerScopeId   String          @map("owner_scope_id") @db.Uuid
+  idempotencyKey String          @map("idempotency_key") @db.Uuid
+  amountMinor    Int             @map("amount_minor")
+  state          SettlementState @default(AVAILABLE)
+  ledgerEntryId  String          @unique @map("ledger_entry_id") @db.Uuid
+  availableAt    DateTime        @map("available_at") @db.Timestamptz(6)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([ownerScopeId, idempotencyKey])
+  @@map("settlement_batches")
+}
+
+model OperatingAllowance {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerScopeId       String   @map("owner_scope_id") @db.Uuid
+  collectorProfileId String   @map("collector_profile_id") @db.Uuid
+  amountMinor        Int      @map("amount_minor")
+  idempotencyKey     String   @map("idempotency_key") @db.Uuid
+  ledgerEntryId      String   @unique @map("ledger_entry_id") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([ownerScopeId, idempotencyKey])
+  @@map("operating_allowances")
+}

@@ -1,0 +1,15 @@
+generatorName: dart-dio
+inputSpec: contracts/openapi.yaml
+outputDir: packages/api_client
+templateDir: tool/openapi-templates/dart-dio
+additionalProperties:
+  pubName: api_client
+  pubVersion: 0.4.0
+  pubPublishTo: none
+  pubDescription: Cliente Dart gerado do contrato KwanzaGo v0.4
+  enumUnknownDefaultCase: true
+  useOptional: false
+  disallowAdditionalPropertiesIfNotPresent: false
+globalProperties:
+  apiTests: false
+  modelTests: false
