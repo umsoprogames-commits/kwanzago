@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   Param,
   Post,
   Req,
@@ -38,6 +39,7 @@ export class PassengerDemoController {
   }
 
   @Post('payment-intents/:intentId/approve')
+  @HttpCode(200)
   approvePaymentIntent(
     @Req() request: ActorRequest,
     @Param('intentId') intentId: string,

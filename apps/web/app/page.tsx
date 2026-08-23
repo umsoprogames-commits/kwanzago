@@ -1,10 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  approvePaymentIntent,
+  closeOwnerSettlement,
+  createOperatingAllowance,
+  createPaymentIntent,
+  demoApiEnabled,
+  getOwnerOverview,
+  getPassengerAlias,
+  getPassengerWallet,
+  type OwnerOverview,
+  type PaymentIntent,
+  type Wallet,
+} from "./demo-api";
 
 type Role = "passenger" | "collector" | "owner";
 type IconName = "wallet" | "scan" | "shield" | "check" | "arrow" | "lock" | "clock" | "chart" | "user" | "close" | "bell" | "car" | "qr" | "settings";
+
+const formatMoney = (amountMinor: number) =>
+  `${amountMinor.toLocaleString("pt-AO")} Kz`;
 
 function Reveal({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
   const reduceMotion = useReducedMotion();
@@ -81,15 +97,16 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
   return <motion.div className="modal-layer" role="dialog" aria-modal="true" onMouseDown={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.section className="modal-box" onMouseDown={e => e.stopPropagation()} initial={{ opacity: 0, scale: .96, y: 14 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .97, y: 8 }} transition={{ type: "spring", stiffness: 330, damping: 27 }}><button className="modal-close" aria-label="Fechar" onClick={onClose}><Icon name="close"/></button>{children}</motion.section></motion.div>;
 }
 
-function PassengerDemo({ onShowQr, onPin }: { onShowQr: () => void; onPin: () => void }) {
+function PassengerDemo({ onShowQr, onPin, wallet, intent }: { onShowQr: () => void; onPin: () => void; wallet: Wallet | null; intent: PaymentIntent | null }) {
+  const total = intent?.totalAmountMinor ?? 600;
   return <div className="role-layout passenger-layout">
     <div className="phone-frame">
       <div className="phone-status"><span>09:41</span><span>●●●</span></div>
       <div className="phone-app-head"><div><small>Express · Olá, Manuel</small><h3>Viagem em curso</h3></div><span className="round-icon"><Icon name="bell" size={17}/></span></div>
       <section className="express-context"><span className="express-badge">EXPRESS</span><div><strong>Táxi azul e branco</strong><small>LD-42-18-KW · Adilson Manuel</small></div><Icon name="car" size={18}/></section>
-      <section className="wallet-blue"><span>Carteira KwanzaGo · Saldo disponível</span><strong>18.450 <small>Kz</small></strong><p><i/> Protegido neste dispositivo</p><button>+ Carregar saldo</button></section>
+      <section className="wallet-blue"><span>Carteira KwanzaGo · Saldo disponível</span><strong>{wallet ? formatMoney(wallet.available.amountMinor) : "18.450 Kz"}</strong><p><i/> Protegido neste dispositivo</p><button>+ Carregar saldo</button></section>
       <section className="qr-preview"><div><span className="tag tag-green">QR activo</span><h4>O teu código pessoal</h4><p>O cobrador lê. Tu confirmas.</p><button onClick={onShowQr}>Mostrar QR <Icon name="arrow" size={15}/></button></div><QrCode small/></section>
-      <section className="payment-request"><div className="request-head"><span><Icon name="scan"/></span><p><small>PEDIDO RECEBIDO</small><strong>Pagamento no táxi</strong></p><b>600 Kz</b></div><div className="request-line"><span>2 passageiros · Adilson · LD-42-18</span><button onClick={onPin}>Confirmar</button></div></section>
+      <section className="payment-request"><div className="request-head"><span><Icon name="scan"/></span><p><small>{intent ? "PEDIDO RECEBIDO" : "AGUARDANDO COBRANÇA"}</small><strong>Pagamento no táxi</strong></p><b>{formatMoney(total)}</b></div><div className="request-line"><span>{intent ? `${intent.quantity} passageiros · Adilson · LD-42-18` : "O cobrador deve ler o teu QR"}</span><button onClick={onPin} disabled={!intent}>Confirmar</button></div></section>
     </div>
     <div className="explanation">
       <p className="section-eyebrow">COMO FUNCIONA PARA O PASSAGEIRO</p>
@@ -102,13 +119,13 @@ function PassengerDemo({ onShowQr, onPin }: { onShowQr: () => void; onPin: () =>
 }
 
 function CollectorDemo({ quantity, setQuantity, onScan, scanState }: { quantity: number; setQuantity: (n: number) => void; onScan: () => void; scanState: "idle" | "waiting" | "success" }) {
-  const total = quantity * 300;
+  const total = quantity * 50_000;
   return <div className="role-layout collector-layout">
     <div className="phone-frame collector-phone">
       <div className="phone-status"><span>09:41</span><span>●●●</span></div>
       <div className="phone-app-head"><div><small>Cobrador</small><h3>Nova cobrança</h3></div><span className="collector-avatar">AM</span></div>
       <section className="collector-context"><span>Viatura atribuída</span><strong>LD-42-18-KW</strong><p>Recebido hoje <b>48.600 Kz</b></p></section>
-      <section className="charge-form"><p className="tiny-label">QUANTAS PESSOAS VÃO PAGAR?</p><div className="quantity"><button onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button><strong>{quantity}<small>{quantity === 1 ? " passageiro" : " passageiros"}</small></strong><button onClick={() => setQuantity(Math.min(8, quantity + 1))}>+</button></div><div className="fare-summary"><span>Tarifa por pessoa</span><b>300 Kz</b></div><div className="total-summary"><span>Total a cobrar</span><strong>{total} Kz</strong></div><button className="scan-action" onClick={onScan}>{scanState === "idle" ? <><Icon name="scan"/> Ler QR do passageiro</> : scanState === "waiting" ? <><Icon name="clock"/> A aguardar confirmação</> : <><Icon name="check"/> Pagamento confirmado</>}</button></section>
+      <section className="charge-form"><p className="tiny-label">QUANTAS PESSOAS VÃO PAGAR?</p><div className="quantity"><button onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button><strong>{quantity}<small>{quantity === 1 ? " passageiro" : " passageiros"}</small></strong><button onClick={() => setQuantity(Math.min(8, quantity + 1))}>+</button></div><div className="fare-summary"><span>Tarifa por pessoa</span><b>{formatMoney(50_000)}</b></div><div className="total-summary"><span>Total a cobrar</span><strong>{formatMoney(total)}</strong></div><button className="scan-action" onClick={onScan} disabled={scanState !== "idle"}>{scanState === "idle" ? <><Icon name="scan"/> Ler QR do passageiro</> : scanState === "waiting" ? <><Icon name="clock"/> A aguardar confirmação</> : <><Icon name="check"/> Pagamento confirmado</>}</button></section>
       <section className="collector-qr-card"><div><small>QR DA VIATURA</small><strong>LD-42-18-KW</strong><p>Mostra este código no táxi para iniciar a cobrança.</p></div><QrCode small/></section><section className="collector-allowance"><span><Icon name="wallet"/></span><p><small>VERBA OPERACIONAL</small><strong>2.500 Kz disponíveis</strong></p><Icon name="arrow" size={16}/></section>
     </div>
     <div className="explanation">
@@ -121,7 +138,7 @@ function CollectorDemo({ quantity, setQuantity, onScan, scanState }: { quantity:
   </div>;
 }
 
-function OwnerDemo({ settled, onSettle, onAllowance }: { settled: boolean; onSettle: () => void; onAllowance: () => void }) {
+function OwnerDemo({ settled, onSettle, onAllowance, overview }: { settled: boolean; onSettle: () => void; onAllowance: () => void; overview: OwnerOverview | null }) {
   const [panel, setPanel] = useState<"overview" | "vehicles" | "settlement">("overview");
   const vehicles = [
     { plate: "LD-42-18-KW", collector: "Adilson Manuel", payments: 18, revenue: "48.600 Kz", status: "Operacional" },
@@ -143,7 +160,7 @@ function OwnerDemo({ settled, onSettle, onAllowance }: { settled: boolean; onSet
     <section className="owner-main">
       <header className="owner-main-head"><div><p className="section-eyebrow">PAINEL DO PROPRIETÁRIO</p><h2>{panel === "vehicles" ? "Viaturas" : panel === "settlement" ? "Liquidações" : "Bom dia, Caetano"}</h2><p>{panel === "overview" ? "Acompanha o dinheiro da tua frota sem depender de relatos manuais." : panel === "vehicles" ? "Estado, cobrador e receita verificada por viatura." : "O que está pendente fica separado do valor já disponível."}</p></div><div className="owner-head-actions"><span className="owner-date">23 Ago 2026 <Icon name="clock" size={14}/></span><button className="owner-notification" aria-label="Notificações"><Icon name="bell" size={17}/><i/></button></div></header>
       {panel === "overview" && <>
-        <div className="owner-kpis"><article className="owner-kpi highlight"><span>Receita verificada hoje</span><strong>128.400 Kz</strong><small><b>+12,8%</b> vs. ontem</small></article><article className="owner-kpi"><span>Pendente de fecho</span><strong>96.700 Kz</strong><small>Disponível amanhã às 08:00</small></article><article className="owner-kpi"><span>Saldo disponível</span><strong>284.350 Kz</strong><small>Valor já elegível</small></article><article className="owner-kpi reserve"><span>Reserva operacional</span><strong>12.500 Kz</strong><small>Para custos autorizados</small></article></div>
+        <div className="owner-kpis"><article className="owner-kpi highlight"><span>Receita verificada hoje</span><strong>{overview ? formatMoney(overview.verifiedRevenue.amountMinor) : "128.400 Kz"}</strong><small><b>Ledger demo</b> verificado</small></article><article className="owner-kpi"><span>Pendente de fecho</span><strong>{overview ? formatMoney(overview.pending.amountMinor) : "96.700 Kz"}</strong><small>Separado até ao fecho</small></article><article className="owner-kpi"><span>Saldo disponível</span><strong>{overview ? formatMoney(overview.available.amountMinor) : "284.350 Kz"}</strong><small>Valor já elegível</small></article><article className="owner-kpi reserve"><span>Reserva operacional</span><strong>{overview ? formatMoney(overview.operatingReserved.amountMinor) : "12.500 Kz"}</strong><small>Para custos autorizados</small></article></div>
         <div className="owner-content-grid"><article className="owner-chart-card"><div className="owner-card-head"><div><span className="tiny-label">RECEITA POR DIA</span><h3>Movimento da frota</h3></div><span className="chart-period">Últimos 7 dias ▾</span></div><div className="owner-chart"><div className="chart-y"><span>150k</span><span>100k</span><span>50k</span><span>0</span></div><div className="chart-bars">{[54,68,48,82,72,88,64].map((height, index) => <div className="chart-bar-wrap" key={index}><div className="chart-bar" style={{ height: `${height}%` }}><span>{index === 5 ? "128k" : ""}</span></div><small>{["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"][index]}</small></div>)}</div></div></article><article className="owner-settlement-card"><div className="owner-card-head"><div><span className="tiny-label">PRÓXIMO FECHO</span><h3>{settled ? "Lote fechado" : "Hoje às 23:59"}</h3></div><span className={`settlement-status ${settled ? "done" : "pending"}`}>{settled ? "Concluído" : "Pendente"}</span></div><div className="settlement-amount"><strong>{settled ? "0 Kz" : "96.700 Kz"}</strong><span>{settled ? "Já disponível no saldo" : "Será libertado após validação"}</span></div><div className="settlement-steps"><p className="done"><Icon name="check" size={13}/> Pagamentos verificados</p><p className="done"><Icon name="check" size={13}/> Reserva operacional separada</p><p className={settled ? "done" : "current"}>{settled ? <Icon name="check" size={13}/> : <Icon name="clock" size={13}/>} {settled ? "Valor disponível" : "A aguardar fecho"}</p></div><button className="blue-button full-width" onClick={onSettle}>{settled ? "Abrir lote de hoje" : "Simular fecho"}</button></article></div>
         <section className="owner-table-card"><div className="owner-card-head"><div><span className="tiny-label">DESEMPENHO DA FROTA</span><h3>Viaturas activas</h3></div><button className="text-action" onClick={() => setPanel("vehicles")}>Ver todas <Icon name="arrow" size={14}/></button></div><div className="vehicle-table"><div className="vehicle-row vehicle-header"><span>Viatura</span><span>Cobrador</span><span>Pagamentos</span><span>Receita hoje</span><span>Estado</span></div>{vehicles.map(vehicle => <div className="vehicle-row" key={vehicle.plate}><span className="vehicle-name"><i><Icon name="car" size={15}/></i><strong>{vehicle.plate}</strong></span><span>{vehicle.collector}</span><span>{vehicle.payments}</span><strong>{vehicle.revenue}</strong><span className={`vehicle-status ${vehicle.status === "Atenção" ? "attention" : ""}`}><i/>{vehicle.status}</span></div>)}</div></section>
       </>}
@@ -156,6 +173,10 @@ function OwnerDemo({ settled, onSettle, onAllowance }: { settled: boolean; onSet
 export default function Home() {
   const [role, setRole] = useState<Role>("passenger");
   const [quantity, setQuantity] = useState(2);
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [paymentAlias, setPaymentAlias] = useState<string | null>(null);
+  const [intent, setIntent] = useState<PaymentIntent | null>(null);
+  const [overview, setOverview] = useState<OwnerOverview | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [pin, setPin] = useState("");
@@ -163,21 +184,126 @@ export default function Home() {
   const [settled, setSettled] = useState(false);
   const [allowanceOpen, setAllowanceOpen] = useState(false);
   const [toast, setToast] = useState("");
+  const [busy, setBusy] = useState(false);
   const content = roleContent[role];
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(""), 3000); };
-  const scan = () => {
-    if (scanState === "idle") { setScanState("waiting"); window.setTimeout(() => { setScanState("success"); notify(`Pagamento de ${quantity * 300} Kz confirmado`); }, 1100); }
+  const refreshBalances = async () => {
+    if (!demoApiEnabled) return;
+    const [nextWallet, nextOverview] = await Promise.all([
+      getPassengerWallet(),
+      getOwnerOverview(),
+    ]);
+    setWallet(nextWallet);
+    setOverview(nextOverview);
   };
-  const submitPin = () => { if (pin.length === 4) { setPinOpen(false); setPin(""); notify("Pagamento de 600 Kz autorizado com PIN"); } };
+
+  useEffect(() => {
+    if (!demoApiEnabled) return;
+    void Promise.all([getPassengerWallet(), getPassengerAlias(), getOwnerOverview()])
+      .then(([nextWallet, alias, nextOverview]) => {
+        setWallet(nextWallet);
+        setPaymentAlias(alias.qrPayload);
+        setOverview(nextOverview);
+      })
+      .catch(() => notify("API local indisponível; a interface mantém o modo mockado."));
+  }, []);
+
+  const scan = async () => {
+    if (scanState !== "idle") return;
+    if (!demoApiEnabled) {
+      setScanState("waiting");
+      window.setTimeout(() => {
+        setScanState("success");
+        notify(`Pagamento de ${formatMoney(quantity * 50_000)} confirmado no modo mockado`);
+      }, 1100);
+      return;
+    }
+    if (!paymentAlias) {
+      notify("QR demo ainda não foi carregado.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const nextIntent = await createPaymentIntent(paymentAlias, quantity);
+      setIntent(nextIntent);
+      setScanState("waiting");
+      notify(`Pedido de ${formatMoney(nextIntent.totalAmountMinor)} enviado ao passageiro.`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível criar a cobrança.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitPin = async () => {
+    if (pin.length !== 4) return;
+    if (!demoApiEnabled || !intent) {
+      setPinOpen(false);
+      setPin("");
+      notify("Pagamento autorizado no modo mockado");
+      return;
+    }
+    setBusy(true);
+    try {
+      const payment = await approvePaymentIntent(intent.id, pin);
+      setPinOpen(false);
+      setPin("");
+      setScanState("success");
+      await refreshBalances();
+      notify(`Pagamento de ${formatMoney(payment.totalAmountMinor)} publicado no ledger.`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível aprovar o pagamento.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const settle = async () => {
+    if (!demoApiEnabled) {
+      setSettled(true);
+      notify("Fecho demonstrativo concluído");
+      return;
+    }
+    setBusy(true);
+    try {
+      const settlement = await closeOwnerSettlement();
+      setSettled(true);
+      await refreshBalances();
+      notify(`Lote de ${formatMoney(settlement.amountMinor)} liquidado.`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível fechar o lote.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveAllowance = async () => {
+    if (!demoApiEnabled) {
+      setAllowanceOpen(false);
+      notify("Limites de reserva actualizados");
+      return;
+    }
+    setBusy(true);
+    try {
+      const allowance = await createOperatingAllowance(25_000);
+      setAllowanceOpen(false);
+      await refreshBalances();
+      notify(`Reserva operacional de ${formatMoney(allowance.amountMinor)} criada.`);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível criar a reserva.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return <main>
-    <header className="top-nav"><a className="logo-link" href="#inicio"><Logo/></a><nav><a href="#como-funciona">Como funciona</a><a href="#perfis">Perfis</a><a href="#seguranca">Segurança</a></nav><span className="demo-badge"><i/> Protótipo interactivo</span></header>
+    <header className="top-nav"><a className="logo-link" href="#inicio"><Logo/></a><nav><a href="#como-funciona">Como funciona</a><a href="#perfis">Perfis</a><a href="#seguranca">Segurança</a></nav><span className="demo-badge"><i/> {demoApiEnabled ? "API demo ligada" : "Protótipo interactivo"}</span></header>
 
     <section className="hero" id="inicio"><motion.div className="hero-copy" initial={{ opacity: 0, x: -22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .62, ease: [0.22, 1, 0.36, 1] }}><p className="eyebrow">CARTEIRA DIGITAL PARA TÁXIS</p><h1>Pagar é simples.<br/><span>Controlar o dinheiro também.</span></h1><p className="hero-text">A KwanzaGo permite ao passageiro pagar por QR e dá ao proprietário uma visão clara do que entrou, do que está reservado e de quando o valor fica disponível.</p><div className="hero-actions"><motion.a className="blue-button" href="/owner" whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: .98 }}>Abrir dashboard do proprietário <Icon name="arrow" size={18}/></motion.a><span><Icon name="shield" size={18}/> QR controlável e confirmação no dispositivo</span></div></motion.div><motion.div className="hero-flow-card" initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .62, delay: .14, ease: [0.22, 1, 0.36, 1] }} whileHover={{ y: -3 }}><p className="tiny-label">O DINHEIRO FLUI COM CLAREZA</p><div className="flow-money"><article><span className="flow-pictogram passenger"><Icon name="wallet"/></span><p>Carteira do passageiro</p><strong>600 Kz</strong></article><motion.div animate={{ x: [0, 4, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}><Icon name="arrow" size={20}/></motion.div><article><span className="flow-pictogram pending"><Icon name="clock"/></span><p>Receita pendente</p><strong>600 Kz</strong></article><motion.div animate={{ x: [0, 4, 0] }} transition={{ duration: 1.8, delay: .25, repeat: Infinity, ease: "easeInOut" }}><Icon name="arrow" size={20}/></motion.div><article><span className="flow-pictogram available"><Icon name="check"/></span><p>Disponível após fecho</p><strong>600 Kz</strong></article></div><div className="hero-flow-note"><span><Icon name="lock" size={17}/></span><p><strong>O cobrador não recebe o saldo.</strong><small>Ele cobra e recebe a confirmação. O crédito pertence ao proprietário.</small></p></div></motion.div></section>
 
     <section className="flow-section" id="como-funciona"><Reveal className="section-heading"><p className="eyebrow">UMA COBRANÇA, TRÊS CONFIRMAÇÕES</p><h2>O processo é fácil de explicar em menos de um minuto.</h2></Reveal><div className="steps-row"><FlowStep number="01" icon="qr" title="QR pessoal" text="O passageiro apresenta um QR estático que pode bloquear ou substituir."/><FlowStep number="02" icon="scan" title="Pedido claro" text="O cobrador escolhe a quantidade e a app envia o valor exacto ao passageiro."/><FlowStep number="03" icon="shield" title="Aprovação segura" text="O passageiro confirma. Múltiplos pagamentos exigem PIN."/><FlowStep number="04" icon="chart" title="Receita controlada" text="O proprietário acompanha pendente, reserva e disponível."/></div></section>
 
-    <section className="roles-section" id="perfis"><Reveal className="section-heading compact"><p className="eyebrow">UM SISTEMA, TRÊS EXPERIÊNCIAS</p><h2>Escolhe um perfil e testa o fluxo.</h2></Reveal><div className="role-tabs" role="tablist">{(["passenger","collector","owner"] as Role[]).map(item => <motion.button role="tab" aria-selected={role === item} key={item} className={role === item ? "active" : ""} whileTap={{ scale: .97 }} whileHover={{ y: -1 }} onClick={() => setRole(item)}><span>{item === "passenger" ? <Icon name="wallet"/> : item === "collector" ? <Icon name="scan"/> : <Icon name="chart"/>}</span>{item === "passenger" ? "Passageiro" : item === "collector" ? "Cobrador" : "Proprietário"}</motion.button>)}</div><AnimatePresence mode="wait"><motion.div key={role} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .32, ease: "easeOut" }}><div className="role-intro"><p className="section-eyebrow">{content.eyebrow}</p><h2>{content.title}</h2><p>{content.description}</p></div><div className="role-surface">{role === "passenger" && <PassengerDemo onShowQr={() => setQrOpen(true)} onPin={() => setPinOpen(true)}/>} {role === "collector" && <CollectorDemo quantity={quantity} setQuantity={setQuantity} onScan={scan} scanState={scanState}/>} {role === "owner" && <OwnerDemo settled={settled} onSettle={() => { setSettled(true); notify("Fecho demonstrativo concluído"); }} onAllowance={() => setAllowanceOpen(true)}/>}</div><p className="role-value"><span><Icon name="check" size={16}/></span>{content.value}</p></motion.div></AnimatePresence></section>
+    <section className="roles-section" id="perfis"><Reveal className="section-heading compact"><p className="eyebrow">UM SISTEMA, TRÊS EXPERIÊNCIAS</p><h2>Escolhe um perfil e testa o fluxo.</h2></Reveal><div className="role-tabs" role="tablist">{(["passenger","collector","owner"] as Role[]).map(item => <motion.button role="tab" aria-selected={role === item} key={item} className={role === item ? "active" : ""} whileTap={{ scale: .97 }} whileHover={{ y: -1 }} onClick={() => setRole(item)}><span>{item === "passenger" ? <Icon name="wallet"/> : item === "collector" ? <Icon name="scan"/> : <Icon name="chart"/>}</span>{item === "passenger" ? "Passageiro" : item === "collector" ? "Cobrador" : "Proprietário"}</motion.button>)}</div><AnimatePresence mode="wait"><motion.div key={role} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .32, ease: "easeOut" }}><div className="role-intro"><p className="section-eyebrow">{content.eyebrow}</p><h2>{content.title}</h2><p>{content.description}</p></div><div className="role-surface">{role === "passenger" && <PassengerDemo onShowQr={() => setQrOpen(true)} onPin={() => setPinOpen(true)} wallet={wallet} intent={intent}/>} {role === "collector" && <CollectorDemo quantity={quantity} setQuantity={setQuantity} onScan={() => void scan()} scanState={scanState}/>} {role === "owner" && <OwnerDemo settled={settled} onSettle={() => void settle()} onAllowance={() => setAllowanceOpen(true)} overview={overview}/>}</div><p className="role-value"><span><Icon name="check" size={16}/></span>{content.value}</p></motion.div></AnimatePresence></section>
 
     <section className="security-section" id="seguranca"><div className="security-copy"><p className="eyebrow">SEGURANÇA QUE NÃO COMPLICA</p><h2>O QR é visível. A autorização continua privada.</h2><p>O modelo foi desenhado para reduzir burla sem tornar o pagamento lento: QR revogável, confirmação no dispositivo, PIN reforçado, limites e sinais de risco.</p></div><div className="security-grid"><article><span><Icon name="qr"/></span><h3>QR controlável</h3><p>Bloqueia, substitui e usa novamente sem mexer no saldo.</p></article><article><span><Icon name="shield"/></span><h3>Dispositivo confirma</h3><p>O QR inicia o pedido; só o passageiro autoriza o débito.</p></article><article><span><Icon name="lock"/></span><h3>PIN quando importa</h3><p>Obrigatório para múltiplos passageiros, risco ou valor elevado.</p></article><article><span><Icon name="clock"/></span><h3>Protecção contínua</h3><p>Limites, período de restrição e geolocalização pontual.</p></article></div></section>
 
@@ -189,7 +315,7 @@ export default function Home() {
 
     {pinOpen && <Modal onClose={() => { setPinOpen(false); setPin(""); }}><div className="pin-modal"><span className="modal-icon"><Icon name="lock" size={26}/></span><p className="section-eyebrow">CONFIRMAÇÃO REFORÇADA</p><h2>Confirma o pagamento</h2><p>600 Kz · 2 passageiros · Adilson · LD-42-18</p><div className="pin-dots">{[0,1,2,3].map(i => <i className={pin.length > i ? "filled" : ""} key={i}/>)}</div><div className="keypad">{[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => pin.length < 4 && setPin(pin + n)}>{n}</button>)}<span/><button onClick={() => pin.length < 4 && setPin(pin + "0")}>0</button><button onClick={() => setPin(pin.slice(0,-1))}>⌫</button></div><button className="blue-button full" disabled={pin.length !== 4} onClick={submitPin}>Autorizar pagamento</button></div></Modal>}
 
-    {allowanceOpen && <Modal onClose={() => setAllowanceOpen(false)}><div className="allowance-modal"><span className="modal-icon"><Icon name="wallet" size={25}/></span><p className="section-eyebrow">RESERVA OPERACIONAL</p><h2>Custos necessários, sem perder o controlo.</h2><p>A reserva vem do saldo já disponível. O cobrador pode pedir uma despesa, mas não movimenta o dinheiro livremente.</p><label>Valor diário reservado <span><input defaultValue="15.000"/> Kz</span></label><label>Despesa que exige aprovação <span><input defaultValue="5.000"/> Kz</span></label><button className="blue-button full" onClick={() => { setAllowanceOpen(false); notify("Limites de reserva actualizados"); }}>Guardar configuração</button></div></Modal>}
+    {allowanceOpen && <Modal onClose={() => setAllowanceOpen(false)}><div className="allowance-modal"><span className="modal-icon"><Icon name="wallet" size={25}/></span><p className="section-eyebrow">RESERVA OPERACIONAL</p><h2>Custos necessários, sem perder o controlo.</h2><p>A reserva vem do saldo já disponível. O cobrador pode pedir uma despesa, mas não movimenta o dinheiro livremente.</p><label>Valor diário reservado <span><input defaultValue="25.000" readOnly/> Kz</span></label><label>Despesa que exige aprovação <span><input defaultValue="5.000" readOnly/> Kz</span></label><button className="blue-button full" disabled={busy} onClick={() => void saveAllowance()}>Criar reserva demo</button></div></Modal>}
     {toast && <div className="toast"><span><Icon name="check" size={16}/></span>{toast}</div>}
   </main>;
 }

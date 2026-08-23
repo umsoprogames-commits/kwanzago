@@ -12,7 +12,7 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
 
   app.useLogger(app.get(SafeLogger));
-  configureApplication(app);
+  configureApplication(app, config.getOrThrow<string>('DEMO_WEB_ORIGIN'));
 
   await app.listen(config.getOrThrow<number>('PORT'));
 }

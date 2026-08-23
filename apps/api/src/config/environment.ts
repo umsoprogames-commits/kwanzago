@@ -16,6 +16,7 @@ const environmentSchema = z.object({
     ),
   JWT_ISSUER: z.string().url(),
   JWT_AUDIENCE: z.string().min(1).max(128),
+  DEMO_WEB_ORIGIN: z.string().url().default('http://127.0.0.1:39003'),
   DEMO_PASSENGER_TOKEN: z.string().min(16).max(256),
   DEMO_COLLECTOR_TOKEN: z.string().min(16).max(256),
   DEMO_OWNER_TOKEN: z.string().min(16).max(256),

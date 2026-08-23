@@ -7,6 +7,7 @@ const validEnvironment = {
   DATABASE_URL: 'postgresql://kwanzago:synthetic@127.0.0.1:55432/kwanzago_test',
   JWT_ISSUER: 'https://auth.demo.kwanzago.ao',
   JWT_AUDIENCE: 'kwanzago-api',
+  DEMO_WEB_ORIGIN: 'http://127.0.0.1:39003',
   DEMO_PASSENGER_TOKEN: 'demo-passenger-token-001',
   DEMO_COLLECTOR_TOKEN: 'demo-collector-token-001',
   DEMO_OWNER_TOKEN: 'demo-owner-token-001',
