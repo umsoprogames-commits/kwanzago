@@ -1,0 +1,30 @@
+{
+  "name": "kwanzago",
+  "version": "0.4.0",
+  "private": true,
+  "workspaces": [
+    "apps/api"
+  ],
+  "engines": {
+    "node": "^20.19.0 || ^22.12.0 || ^24.0.0"
+  },
+  "packageManager": "npm@11.6.2",
+  "overrides": {
+    "deepmerge-ts": "8.0.1"
+  },
+  "devDependencies": {
+    "yaml": "2.9.0"
+  },
+  "scripts": {
+    "specs:validate": "node scripts/validate_specs.mjs",
+    "api:build": "npm --workspace @kwanzago/api run build",
+    "api:check": "scripts/api_ci.sh",
+    "api:format:check": "npm --workspace @kwanzago/api run format:check",
+    "api:lint": "npm --workspace @kwanzago/api run lint",
+    "api:prisma:generate": "npm --workspace @kwanzago/api run prisma:generate",
+    "api:prisma:validate": "npm --workspace @kwanzago/api run prisma:validate",
+    "api:test": "npm --workspace @kwanzago/api run test",
+    "api:test:e2e": "npm --workspace @kwanzago/api run test:e2e",
+    "api:typecheck": "npm --workspace @kwanzago/api run typecheck"
+  }
+}

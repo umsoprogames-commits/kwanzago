@@ -1,0 +1,4 @@
+# Documentação gerada por OpenAPI e exportações históricas mantêm o formato do emissor.
+packages/api_client/README.md -whitespace
+packages/api_client/doc/** -whitespace
+sources/notion/** -whitespace

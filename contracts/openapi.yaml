@@ -1,0 +1,227 @@
+openapi: 3.1.0
+info:
+  title: KwanzaGo API
+  version: 0.4.0
+  description: MVP QR online-first. PSP, KYC e settlement real são mockados.
+servers:
+  - url: https://api.example.kwanzago.ao/v1
+security:
+  - bearerAuth: []
+paths:
+  /passenger/wallet:
+    get:
+      operationId: getPassengerWallet
+      summary: Consultar saldo e carteira do passageiro autenticado
+      responses:
+        '200':
+          description: Carteira
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+  /passenger/payment-alias:
+    get:
+      operationId: getPassengerPaymentAlias
+      summary: Obter alias QR estático do passageiro
+      responses:
+        '200':
+          description: Alias QR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAlias'
+  /passenger/payment-alias/block:
+    post:
+      operationId: blockPassengerPaymentAlias
+      summary: Bloquear o QR actual
+      responses:
+        '200': { description: Alias bloqueado }
+  /passenger/payment-alias/replace:
+    post:
+      operationId: replacePassengerPaymentAlias
+      summary: Revogar QR actual e criar outro
+      responses:
+        '201':
+          description: Novo alias
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAlias'
+  /collector/payment-intents:
+    post:
+      operationId: createPaymentIntent
+      summary: Criar uma cobrança após leitura do QR
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentIntent'
+      responses:
+        '201':
+          description: Intenção pendente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntent'
+        '409': { description: Alias bloqueado ou pagamento incompatível }
+  /passenger/payment-intents/{intentId}/approve:
+    post:
+      operationId: approvePaymentIntent
+      summary: Aprovar intenção no dispositivo do passageiro
+      parameters:
+        - $ref: '#/components/parameters/IntentId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovePaymentIntent'
+      responses:
+        '200':
+          description: Resultado final
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResult'
+  /passenger/payment-intents/{intentId}/decline:
+    post:
+      operationId: declinePaymentIntent
+      summary: Recusar intenção pendente
+      parameters:
+        - $ref: '#/components/parameters/IntentId'
+      responses:
+        '200': { description: Intenção recusada }
+  /owner/overview:
+    get:
+      operationId: getOwnerOverview
+      summary: Resumo financeiro do proprietário
+      responses:
+        '200':
+          description: Overview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerOverview'
+  /owner/settlements/close:
+    post:
+      operationId: closeOwnerSettlement
+      summary: Executar fecho simulado idempotente
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Lote de liquidação
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettlementBatch'
+  /owner/operating-allowances:
+    post:
+      operationId: createOperatingAllowance
+      summary: Reservar saldo disponível para operação
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAllowance'
+      responses:
+        '201': { description: Reserva criada }
+components:
+  parameters:
+    IntentId:
+      name: intentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Money:
+      type: object
+      required: [amountMinor, currency]
+      properties:
+        amountMinor: { type: integer, minimum: 0 }
+        currency: { type: string, const: AOA }
+    Wallet:
+      type: object
+      required: [id, available, currency]
+      properties:
+        id: { type: string, format: uuid }
+        available: { $ref: '#/components/schemas/Money' }
+        currency: { type: string, const: AOA }
+    PaymentAlias:
+      type: object
+      required: [id, qrPayload, state]
+      properties:
+        id: { type: string, format: uuid }
+        qrPayload: { type: string, description: Public alias only; never balance or PII }
+        state: { type: string, enum: [ACTIVE, BLOCKED, REPLACED] }
+    CreatePaymentIntent:
+      type: object
+      required: [paymentAlias, quantity, fareRuleId]
+      properties:
+        paymentAlias: { type: string }
+        quantity: { type: integer, minimum: 1, maximum: 8 }
+        fareRuleId: { type: string, format: uuid }
+    PaymentIntent:
+      type: object
+      required: [id, state, quantity, unitAmountMinor, totalAmountMinor, expiresAt, stepUpRequired]
+      properties:
+        id: { type: string, format: uuid }
+        state: { type: string, enum: [PENDING_CONFIRMATION, APPROVED, DECLINED, EXPIRED, CANCELLED, UNKNOWN] }
+        quantity: { type: integer }
+        unitAmountMinor: { type: integer }
+        totalAmountMinor: { type: integer }
+        expiresAt: { type: string, format: date-time }
+        stepUpRequired: { type: boolean }
+        collector: { type: object, additionalProperties: true }
+    ApprovePaymentIntent:
+      type: object
+      required: [approvalMethod, deviceProof]
+      properties:
+        approvalMethod: { type: string, enum: [BIOMETRIC, PIN] }
+        pin: { type: string, minLength: 4, maxLength: 6, writeOnly: true }
+        deviceProof: { type: string }
+    PaymentResult:
+      type: object
+      required: [paymentId, state, totalAmountMinor]
+      properties:
+        paymentId: { type: string, format: uuid }
+        state: { type: string, enum: [POSTED, DECLINED, UNKNOWN] }
+        totalAmountMinor: { type: integer }
+        receiptCode: { type: string }
+    OwnerOverview:
+      type: object
+      required: [verifiedRevenue, pending, available, operatingReserved, nextSettlementAt]
+      properties:
+        verifiedRevenue: { $ref: '#/components/schemas/Money' }
+        pending: { $ref: '#/components/schemas/Money' }
+        available: { $ref: '#/components/schemas/Money' }
+        operatingReserved: { $ref: '#/components/schemas/Money' }
+        nextSettlementAt: { type: string, format: date-time }
+    SettlementBatch:
+      type: object
+      required: [id, state, amountMinor, availableAt]
+      properties:
+        id: { type: string, format: uuid }
+        state: { type: string, enum: [OPEN, CLOSED, AVAILABLE, FAILED] }
+        amountMinor: { type: integer }
+        availableAt: { type: string, format: date-time }
+    CreateAllowance:
+      type: object
+      required: [collectorId, amountMinor]
+      properties:
+        collectorId: { type: string, format: uuid }
+        amountMinor: { type: integer, minimum: 1 }
