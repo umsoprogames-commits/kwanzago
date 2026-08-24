@@ -143,29 +143,10 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
   return <motion.div className="modal-layer" role="dialog" aria-modal="true" onMouseDown={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.section className="modal-box" onMouseDown={e => e.stopPropagation()} initial={{ opacity: 0, scale: .96, y: 14 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .97, y: 8 }} transition={{ type: "spring", stiffness: 330, damping: 27 }}><button className="modal-close" aria-label="Fechar" onClick={onClose}><Icon name="close"/></button>{children}</motion.section></motion.div>;
 }
 
-function PassengerDemo({ onShowQr, onPin, onNotify }: { onShowQr: () => void; onPin: () => void; onNotify: (text: string) => void }) {
+function PassengerDemo() {
   return <div className="role-layout passenger-layout">
-    <div className="phone-frame">
-      <div className="phone-status"><span>09:41</span><span>●●●</span></div>
-      <div className="phone-app-head"><div><small>Express · Olá, Manuel</small><h3>Viagem em curso</h3></div><span className="round-icon"><Icon name="bell" size={17}/></span></div>
-      <section className="express-context">
-        <img src="/express.png" alt="Express" className="express-logo-chip" />
-        <div><strong>Táxi azul e branco</strong><small>LD-42-18-KW · Adilson Manuel</small></div>
-        <Icon name="car" size={18}/>
-      </section>
-      <section className="wallet-card">
-        <div className="wallet-card-top"><span className="wallet-card-chip"/><span className="tag tag-green">QR activo</span></div>
-        <span className="wallet-card-label">Saldo disponível</span>
-        <strong className="wallet-card-balance">18.450 <small>Kz</small></strong>
-        <div className="wallet-card-bottom"><span>KG •••• 7421</span><span>Manuel A.</span></div>
-      </section>
-      <div className="quick-actions">
-        <button onClick={onShowQr}><Icon name="qr" size={18}/> Mostrar QR</button>
-        <button onClick={() => onNotify("Saldo carregado no protótipo")}><Icon name="wallet" size={18}/> Carregar saldo</button>
-        <button onClick={() => onNotify("Histórico ainda não disponível no protótipo")}><Icon name="clock" size={18}/> Histórico</button>
-        <button onClick={() => onNotify("QR bloqueado no protótipo")}><Icon name="lock" size={18}/> Bloquear QR</button>
-      </div>
-      <section className="payment-request"><div className="request-head"><span><Icon name="scan"/></span><p><small>PEDIDO RECEBIDO</small><strong>Pagamento no táxi</strong></p><b>600 Kz</b></div><div className="request-line"><span>2 passageiros · Adilson · LD-42-18</span><button onClick={onPin}>Confirmar</button></div></section>
+    <div className="passenger-img-wrap">
+      <img src="/express.png" alt="Passageiro Express" className="passenger-express-img" />
     </div>
     <div className="explanation passenger-explanation">
       <p className="section-eyebrow">PASSAGEIRO · COMO FUNCIONA</p>
@@ -325,7 +306,7 @@ export default function Home() {
 
     <section className="flow-section" id="como-funciona"><Reveal className="section-heading"><p className="eyebrow">UMA COBRANÇA, TRÊS CONFIRMAÇÕES</p><h2>O processo é fácil de explicar em menos de um minuto.</h2></Reveal><div className="steps-row"><FlowStep number="01" icon="qr" title="QR pessoal" text="O passageiro apresenta um QR estático que pode bloquear ou substituir."/><FlowStep number="02" icon="scan" title="Pedido claro" text="O cobrador escolhe a quantidade e a app envia o valor exacto ao passageiro."/><FlowStep number="03" icon="shield" title="Aprovação segura" text="O passageiro confirma. Múltiplos pagamentos exigem PIN."/><FlowStep number="04" icon="chart" title="Receita controlada" text="O proprietário acompanha pendente, reserva e disponível."/></div></section>
 
-    <section className="roles-section" id="perfis"><Reveal className="section-heading compact"><p className="eyebrow">UM SISTEMA, TRÊS EXPERIÊNCIAS</p><h2>Escolhe um perfil e testa o fluxo.</h2></Reveal><div className="role-tabs" role="tablist">{(["passenger","collector","owner"] as Role[]).map(item => <motion.button role="tab" aria-selected={role === item} key={item} className={role === item ? "active" : ""} whileTap={{ scale: .97 }} whileHover={{ y: -1 }} onClick={() => setRole(item)}><span>{item === "passenger" ? <Icon name="wallet"/> : item === "collector" ? <Icon name="scan"/> : <Icon name="chart"/>}</span>{item === "passenger" ? "Passageiro" : item === "collector" ? "Cobrador" : "Proprietário"}</motion.button>)}</div><AnimatePresence mode="wait"><motion.div key={role} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .32, ease: "easeOut" }}><div className="role-intro"><p className="section-eyebrow">{content.eyebrow}</p>{role !== "passenger" && <><h2>{content.title}</h2><p>{content.description}</p></>}</div><div className="role-surface">{role === "passenger" && <PassengerDemo onShowQr={() => setQrOpen(true)} onPin={() => setPinOpen(true)} onNotify={notify}/>} {role === "collector" && <CollectorDemo quantity={quantity} setQuantity={setQuantity} onScan={scan} scanState={scanState}/>} {role === "owner" && <OwnerPreview/>}</div><p className="role-value"><span><Icon name="check" size={16}/></span>{content.value}</p></motion.div></AnimatePresence></section>
+    <section className="roles-section" id="perfis"><Reveal className="section-heading compact"><p className="eyebrow">UM SISTEMA, TRÊS EXPERIÊNCIAS</p><h2>Escolhe um perfil e testa o fluxo.</h2></Reveal><div className="role-tabs" role="tablist">{(["passenger","collector","owner"] as Role[]).map(item => <motion.button role="tab" aria-selected={role === item} key={item} className={role === item ? "active" : ""} whileTap={{ scale: .97 }} whileHover={{ y: -1 }} onClick={() => setRole(item)}><span>{item === "passenger" ? <Icon name="wallet"/> : item === "collector" ? <Icon name="scan"/> : <Icon name="chart"/>}</span>{item === "passenger" ? "Passageiro" : item === "collector" ? "Cobrador" : "Proprietário"}</motion.button>)}</div><AnimatePresence mode="wait"><motion.div key={role} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .32, ease: "easeOut" }}><div className="role-intro"><p className="section-eyebrow">{content.eyebrow}</p>{role !== "passenger" && <><h2>{content.title}</h2><p>{content.description}</p></>}</div><div className="role-surface">{role === "passenger" && <PassengerDemo/>} {role === "collector" && <CollectorDemo quantity={quantity} setQuantity={setQuantity} onScan={scan} scanState={scanState}/>} {role === "owner" && <OwnerPreview/>}</div><p className="role-value"><span><Icon name="check" size={16}/></span>{content.value}</p></motion.div></AnimatePresence></section>
 
     <section className="security-section" id="seguranca"><Reveal className="security-copy"><p className="eyebrow">SEGURANÇA QUE NÃO COMPLICA</p><h2>O QR é visível. A autorização continua privada.</h2><p>O modelo foi desenhado para reduzir burla sem tornar o pagamento lento: QR revogável, confirmação no dispositivo, PIN reforçado, limites e sinais de risco.</p></Reveal><div className="security-grid">{[{icon:"qr" as IconName,title:"QR controlável",text:"Bloqueia, substitui e usa novamente sem mexer no saldo."},{icon:"shield" as IconName,title:"Dispositivo confirma",text:"O QR inicia o pedido; só o passageiro autoriza o débito."},{icon:"lock" as IconName,title:"PIN quando importa",text:"Obrigatório para múltiplos passageiros, risco ou valor elevado."},{icon:"clock" as IconName,title:"Protecção contínua",text:"Limites, período de restrição e geolocalização pontual."}].map((item, index) => <motion.article key={item.title} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ duration: .45, delay: index * .07 }} whileHover={{ y: -4, boxShadow: "0 16px 30px rgba(18,78,160,.11)" }}><span><Icon name={item.icon}/></span><h3>{item.title}</h3><p>{item.text}</p></motion.article>)}</div></section>
 
