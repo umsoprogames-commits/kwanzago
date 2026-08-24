@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
 import { type Vehicle, type Collector, initialVehicles, initialCollectors, revenueDays, money } from "../owner-data";
+
+const basePath = process.env.NODE_ENV === "production" ? "/kwanzago" : "";
+function imgUrl(path: string) {
+  return path.startsWith("/") ? `${basePath}${path}` : path;
+}
 
 type Section = "overview" | "vehicles" | "collectors" | "settlements" | "settings";
 
@@ -90,10 +96,10 @@ export default function OwnerDashboard() {
 
   return <main className="owner-app">
     <aside className="owner-app-sidebar">
-      <a className="owner-app-brand" href="/"><img src="/kwanzago-symbol.png" alt="KwanzaGo" /><span><strong>KwanzaGo</strong><small>Owner Console</small></span></a>
+      <Link className="owner-app-brand" href="/"><img src={imgUrl("/kwanzago-symbol.png")} alt="KwanzaGo" /><span><strong>KwanzaGo</strong><small>Owner Console</small></span></Link>
       <div className="owner-app-account"><span className="owner-account-avatar">CJ</span><span><strong>Caetano José</strong><small>Proprietário</small></span></div>
       <nav aria-label="Menu do proprietário">{nav("overview", "Visão geral", "chart")}{nav("vehicles", "Viaturas", "car", "3")}{nav("collectors", "Cobradores", "user", "2")}{nav("settlements", "Liquidações", "wallet")}{nav("settings", "Definições", "settings")}</nav>
-      <div className="owner-app-sidebar-bottom"><p><Icon name="check" size={15} /> Dados mockados activos</p><button onClick={reset}><Icon name="refresh" size={14} /> Repor demonstração</button><a href="/">Voltar à apresentação</a></div>
+      <div className="owner-app-sidebar-bottom"><p><Icon name="check" size={15} /> Dados mockados activos</p><button onClick={reset}><Icon name="refresh" size={14} /> Repor demonstração</button><Link href="/">Voltar à apresentação</Link></div>
     </aside>
     <section className="owner-app-content">
       <header className="owner-app-header"><div><span className="owner-overline">CONTA DO PROPRIETÁRIO</span><h1>{section === "overview" ? "Visão geral" : section === "vehicles" ? "Viaturas" : section === "collectors" ? "Cobradores" : section === "settlements" ? "Liquidações" : "Definições"}</h1><p>{section === "overview" ? "Controlo financeiro e operacional da tua frota." : section === "vehicles" ? "Estado e receita verificada por viatura." : section === "collectors" ? "Pessoas autorizadas a iniciar cobranças." : section === "settlements" ? "Fechos, reservas e valores disponíveis." : "Configura os limites da operação."}</p></div><div className="owner-header-right"><span className="owner-sync"><i /> Actualizado agora</span><button className="owner-icon-button" aria-label="Notificações"><Icon name="bell" size={17} /><i /></button><span className="owner-header-date">23 Ago 2026</span></div></header>

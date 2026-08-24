@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import { initialVehicles, revenueDays, money } from "./owner-data";
+
+const basePath = process.env.NODE_ENV === "production" ? "/kwanzago" : "";
+function imgUrl(path: string) {
+  return path.startsWith("/") ? `${basePath}${path}` : path;
+}
 
 function HeroShader() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -115,7 +121,7 @@ function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 }
 
 function Logo() {
-  return <span className="brand-lockup"><img className="brand-logo" src="/kwanzago-symbol.png" alt="" /><strong>KwanzaGo</strong></span>;
+  return <span className="brand-lockup"><img className="brand-logo" src={imgUrl("/kwanzago-symbol.png")} alt="" /><strong>KwanzaGo</strong></span>;
 }
 
 function QrCode({ small = false }: { small?: boolean }) {
@@ -146,7 +152,7 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 function PassengerDemo() {
   return <div className="role-layout passenger-layout">
     <div className="passenger-img-wrap">
-      <img src="/express.png" alt="Passageiro Express" className="passenger-express-img" />
+      <img src={imgUrl("/express.png")} alt="Passageiro Express" className="passenger-express-img" />
     </div>
     <div className="explanation passenger-explanation">
       <p className="section-eyebrow">PASSAGEIRO · COMO FUNCIONA</p>
@@ -163,7 +169,7 @@ function PassengerDemo() {
 function CollectorDemo() {
   return <div className="role-layout collector-layout">
     <div className="passenger-img-wrap">
-      <img src="/cobrador.png" alt="Cobrador Nova Cobrança" className="passenger-express-img" />
+      <img src={imgUrl("/cobrador.png")} alt="Cobrador Nova Cobrança" className="passenger-express-img" />
     </div>
     <div className="explanation passenger-explanation">
       <p className="section-eyebrow">COBRADOR · COMO FUNCIONA</p>
@@ -297,7 +303,7 @@ export default function Home() {
       <header className="top-nav" ref={navRef}><div className={`nav-pill ${isOverDarkSection ? "nav-pill-light" : "nav-pill-dark"}`}><a className="logo-link" href="#inicio"><Logo/></a><nav><a href="#como-funciona">Como funciona</a><a href="#perfis">Perfis</a><a href="#seguranca">Segurança</a></nav><span className="demo-badge"><i/> Protótipo interactivo</span></div></header>
       <HeroShader/>
       <div className="hero-orbs"><span className="hero-orb a"/><span className="hero-orb b"/><span className="hero-orb c"/></div>
-      <section className="hero" id="inicio"><motion.div className="hero-copy" initial={{ opacity: 0, x: -22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .62, ease: [0.22, 1, 0.36, 1] }}><p className="eyebrow">CARTEIRA DIGITAL PARA TÁXIS</p><h1>Pagar é simples.<br/><span>Controlar o dinheiro também.</span></h1><p className="hero-text">A KwanzaGo permite ao passageiro pagar por QR e dá ao proprietário uma visão clara do que entrou, do que está reservado e de quando o valor fica disponível.</p><div className="hero-actions"><motion.a className="white-hero-button" href="/owner" whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: .98 }}>Abrir dashboard do proprietário <Icon name="arrow" size={18}/></motion.a><span><Icon name="shield" size={18}/> QR controlável e confirmação no dispositivo</span></div></motion.div><motion.div className="hero-illustration-wrap" initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .62, delay: .14, ease: [0.22, 1, 0.36, 1] }} whileHover={{ y: -4 }}><img src="/hero-candongueiro.png" alt="Táxi Candongueiro KwanzaGo" className="hero-candongueiro-img" /></motion.div></section>
+      <section className="hero" id="inicio"><motion.div className="hero-copy" initial={{ opacity: 0, x: -22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .62, ease: [0.22, 1, 0.36, 1] }}><p className="eyebrow">CARTEIRA DIGITAL PARA TÁXIS</p><h1>Pagar é simples.<br/><span>Controlar o dinheiro também.</span></h1><p className="hero-text">A KwanzaGo permite ao passageiro pagar por QR e dá ao proprietário uma visão clara do que entrou, do que está reservado e de quando o valor fica disponível.</p><div className="hero-actions"><Link className="white-hero-button" href="/owner">Abrir dashboard do proprietário <Icon name="arrow" size={18}/></Link><span><Icon name="shield" size={18}/> QR controlável e confirmação no dispositivo</span></div></motion.div><motion.div className="hero-illustration-wrap" initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .62, delay: .14, ease: [0.22, 1, 0.36, 1] }} whileHover={{ y: -4 }}><img src={imgUrl("/hero-candongueiro.png")} alt="Táxi Candongueiro KwanzaGo" className="hero-candongueiro-img" /></motion.div></section>
       <div className="hero-fade"/>
     </div>
 
