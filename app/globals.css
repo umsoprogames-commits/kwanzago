@@ -8,15 +8,20 @@ button,input { font:inherit; }
 button { cursor:pointer; }
 
 .top-nav { position:sticky; top:0; z-index:40; padding:18px clamp(16px,4vw,32px) 0; background:transparent; }
-.nav-pill { max-width:1160px; margin:0 auto; padding:11px 22px; border-radius:999px; display:flex; align-items:center; justify-content:space-between; gap:22px; background:rgba(255,255,255,0.95); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,0.8); box-shadow:0 10px 35px rgba(0,0,0,0.18); transition:box-shadow .25s ease; }
-.nav-pill .brand-lockup,.nav-pill .brand-lockup strong { color:#03045e; }
-.logo-link { width:150px; height:49px; overflow:hidden; display:flex; align-items:center; }
-.brand-logo { width:154px; height:54px; object-fit:contain; object-position:center; }
-.nav-pill nav { display:flex; align-items:center; gap:26px; margin-left:auto; }
-.nav-pill nav a { color:#334155; text-decoration:none; font-size:13px; font-weight:650; transition:color .15s ease; }
-.nav-pill nav a:hover { color:#007bff; }
-.demo-badge { padding:8px 13px; border:1px solid rgba(3,4,94,0.15); border-radius:30px; display:flex; align-items:center; gap:7px; color:#03045e; background:rgba(3,4,94,0.06); font-size:11px; font-weight:750; }
-.demo-badge i { width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,0.25); }
+.nav-pill { max-width:1160px; margin:0 auto; padding:11px 22px; border-radius:999px; display:flex; align-items:center; justify-content:space-between; gap:22px; transition:background-color .35s ease, border-color .35s ease, box-shadow .35s ease, color .35s ease; }
+.nav-pill-light { background:rgba(255,255,255,0.95); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,0.8); box-shadow:0 10px 35px rgba(0,0,0,0.18); }
+.nav-pill-light .brand-lockup,.nav-pill-light .brand-lockup strong { color:#03045e; }
+.nav-pill-light nav a { color:#334155; text-decoration:none; font-size:13px; font-weight:650; transition:color .15s ease; }
+.nav-pill-light nav a:hover { color:#007bff; }
+.nav-pill-light .demo-badge { padding:8px 13px; border:1px solid rgba(3,4,94,0.15); border-radius:30px; display:flex; align-items:center; gap:7px; color:#03045e; background:rgba(3,4,94,0.06); font-size:11px; font-weight:750; }
+.nav-pill-light .demo-badge i { width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,0.25); }
+
+.nav-pill-dark { background:rgba(3,4,94,0.92); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,0.15); box-shadow:0 12px 40px rgba(3,4,94,0.35); }
+.nav-pill-dark .brand-lockup,.nav-pill-dark .brand-lockup strong { color:#ffffff; }
+.nav-pill-dark nav a { color:#cbd5e1; text-decoration:none; font-size:13px; font-weight:650; transition:color .15s ease; }
+.nav-pill-dark nav a:hover { color:#ffffff; }
+.nav-pill-dark .demo-badge { padding:8px 13px; border:1px solid rgba(255,255,255,0.22); border-radius:30px; display:flex; align-items:center; gap:7px; color:#ffffff; background:rgba(255,255,255,0.12); font-size:11px; font-weight:750; }
+.nav-pill-dark .demo-badge i { width:8px; height:8px; border-radius:50%; background:#4ade80; box-shadow:0 0 0 3px rgba(74,222,128,0.25); }
 
 .white-hero-button { background:#ffffff; color:#03045e; font-weight:750; font-size:13px; padding:14px 24px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; gap:10px; border:0; box-shadow:0 10px 25px rgba(0,0,0,0.25); transition:all 0.25s ease; text-decoration:none; cursor:pointer; }
 .white-hero-button:hover { background:#f8fafc; color:#007bff; transform:translateY(-2px); box-shadow:0 14px 32px rgba(0,0,0,0.35); }
