@@ -9,6 +9,29 @@ Drizzle support.
 - Node.js `>=22.13.0`
 - Linux with `flock`, `curl`, and GNU `timeout`
 
+## Demo local ligada à API
+
+Por omissão, a interface continua a funcionar como protótipo visual. Para ligar
+o fluxo principal à API NestJS local, copie `.env.example` para `.env.local` e
+inicie a API com `DEMO_WEB_ORIGIN` igual à origem desta aplicação. As três
+credenciais da amostra são deliberadamente sintéticas e só podem ser usadas com
+`DEMO_MODE=true`; nunca colocar tokens reais em variáveis `VITE_*`.
+
+```bash
+cp .env.example .env.local
+# No directório raiz do monorepo, com PostgreSQL demo iniciado:
+DEMO_WEB_ORIGIN=http://127.0.0.1:39004 npm --workspace @kwanzago/api run start:dev
+# Neste directório:
+npm run build
+npm run start -- --port 39004
+```
+
+No ecrã principal, escolha **Cobrador** e leia o QR; em seguida escolha
+**Passageiro** e confirme o pedido com o PIN sintético `2468`. O perfil
+**Proprietário** mostra os valores provenientes da API e permite o fecho e a
+reserva de operação. A página separada `/owner` continua uma visão visual para
+a apresentação.
+
 ## Sites Lifecycle
 
 The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
